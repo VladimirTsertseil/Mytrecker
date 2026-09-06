@@ -3,6 +3,50 @@ const root=document.getElementById('app');
 const PROGRAM=window.PROGRAM_116;
 if(!PROGRAM) throw new Error('PROGRAM_116 is missing');
 const P=PROGRAM.routines;
+
+
+// --- Audio overlay mode v1.6 ---
+// On supporting iOS/WebKit builds, "transient" lets a short app sound mix with
+// music from another app instead of taking over the phone's playback session.
+const restAudio = new Audio('rest-whistle-v13.wav');
+restAudio.preload = 'auto';
+
+let previousAudioSessionType = null;
+
+function enterTransientAudioSession() {
+  try {
+    if ('audioSession' in navigator && navigator.audioSession) {
+      previousAudioSessionType = navigator.audioSession.type || 'auto';
+      navigator.audioSession.type = 'transient';
+    }
+  } catch (e) {}
+}
+
+function leaveTransientAudioSession() {
+  try {
+    if ('audioSession' in navigator && navigator.audioSession) {
+      navigator.audioSession.type = previousAudioSessionType || 'auto';
+    }
+  } catch (e) {}
+  previousAudioSessionType = null;
+}
+
+async function playRestSignal() {
+  if (!soundEnabled) return;
+  try {
+    enterTransientAudioSession();
+    restAudio.currentTime = 0;
+    await playRestSignal();
+  } catch (e) {
+    leaveTransientAudioSession();
+  }
+}
+
+restAudio.addEventListener('ended', leaveTransientAudioSession);
+restAudio.addEventListener('pause', () => {
+  if (restAudio.currentTime === 0 || restAudio.ended) leaveTransientAudioSession();
+});
+
 const STORAGE='tracker116-state-v1', HISTORY='tracker116-history-v1', SOUND_PREF='tracker116-sound-v1', PENDING='tracker116-pending-finish-v1';
 function mk(k){return{ex:0,set:0,edit:false,items:P[k].map(x=>({rir:'',tech:'',note:'',sets:Array.from({length:x.sets},(_,i)=>({weight:i===0?(x.w||''):'',reps:String(x.t[i]??''),done:false}))}))}}
 function fresh(){return{S:{A:mk('A'),B:mk('B'),C:mk('C')},R:'C',started:null,finished:null,restEnd:null,programVersion:PROGRAM.version}}
@@ -197,7 +241,7 @@ updateSoundButton();syncLifecycleUI();render();
 
 
 // --- PWA update controls v1.3 ---
-const TRACKER_APP_VERSION = '1.5.2';
+const TRACKER_APP_VERSION = '1.6';
 
 async function forceTrackerUpdate() {
   const btn = document.getElementById('trackerUpdateBtn');
@@ -240,8 +284,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!sessionStorage.getItem('tracker116-reloaded-v152')) {
-      sessionStorage.setItem('tracker116-reloaded-v152', '1');
+    if (!sessionStorage.getItem('tracker116-reloaded-v16')) {
+      sessionStorage.setItem('tracker116-reloaded-v16', '1');
       window.location.reload();
     }
   });
