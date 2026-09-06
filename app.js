@@ -31,13 +31,13 @@ function leaveTransientAudioSession() {
   previousAudioSessionType = null;
 }
 
-async function playRestSignal() {
+async function playRestSignal(){
   if (!soundEnabled) return;
-  try {
+  try{
     enterTransientAudioSession();
     restAudio.currentTime = 0;
-    await playRestSignal();
-  } catch (e) {
+    await restAudio.play();
+  }catch(e){
     leaveTransientAudioSession();
   }
 }
@@ -77,14 +77,7 @@ function unlockSound(){
     else {restSound.pause();restSound.currentTime=0;restSound.volume=oldVol;soundUnlocked=true}
   }catch(e){}
 }
-function playRestSound(){
-  if(!soundEnabled)return;
-  try{
-    restSound.pause();restSound.currentTime=0;restSound.volume=1;
-    const p=restSound.play();
-    if(p&&typeof p.catch==='function')p.catch(()=>{status.textContent='Отдых закончен · звук заблокирован iOS — нажми «🔊 Звук» один раз'});
-  }catch(e){}
-}
+function playRestSound(){ playRestSignal(); }
 
 function persist(){try{localStorage.setItem(STORAGE,JSON.stringify({S,R,started,finished,restEnd,programVersion:PROGRAM.version}))}catch(e){}}
 function clearTimerLoop(){if(timer){clearInterval(timer);timer=null}}
@@ -241,7 +234,7 @@ updateSoundButton();syncLifecycleUI();render();
 
 
 // --- PWA update controls v1.3 ---
-const TRACKER_APP_VERSION = '1.6';
+const TRACKER_APP_VERSION = '1.7';
 
 async function forceTrackerUpdate() {
   const btn = document.getElementById('trackerUpdateBtn');
@@ -284,9 +277,65 @@ window.addEventListener('DOMContentLoaded', () => {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!sessionStorage.getItem('tracker116-reloaded-v16')) {
-      sessionStorage.setItem('tracker116-reloaded-v16', '1');
+    if (!sessionStorage.getItem('tracker116-reloaded-v17')) {
+      sessionStorage.setItem('tracker116-reloaded-v17', '1');
       window.location.reload();
     }
   });
 }
+
+
+// --- v1.7 stability ---
+function v17ActiveWorkout(){
+  return !!(session && session.startedAt && !session.finishedAt);
+}
+document.addEventListener('click', function(ev){
+  const b=ev.target.closest('button');
+  if(!b) return;
+  const t=(b.textContent||'').trim();
+
+  if(t.includes('Завершить')){
+    if(!v17ActiveWorkout()){
+      ev.preventDefault(); ev.stopImmediatePropagation();
+      alert('Сначала начни тренировку.');
+      return;
+    }
+    if(!confirm(`Завершить тренировку ${R}?`)){
+      ev.preventDefault(); ev.stopImmediatePropagation();
+      return;
+    }
+  }
+
+  if(/^[ABC]$/.test(t) && t!==R && v17ActiveWorkout()){
+    if(!confirm(`Сейчас идёт тренировка ${R}. Переключиться на ${t}? Текущая тренировка останется незавершённой.`)){
+      ev.preventDefault(); ev.stopImmediatePropagation();
+    }
+  }
+}, true);
+
+function exportTrackerHistory(){
+  try{
+    const raw=localStorage.getItem('tracker116_history');
+    const history=raw?JSON.parse(raw):[];
+    const payload={exportedAt:new Date().toISOString(),app:'116 дней',appVersion:'1.7',history};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;
+    a.download=`tracker-116-history-${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }catch(e){ alert('Не удалось экспортировать историю.'); }
+}
+
+const v17HistoryObserver=new MutationObserver(function(){
+  if(document.getElementById('exportHistoryBtn')) return;
+  const candidates=[...document.querySelectorAll('h1,h2,h3,button,div')];
+  const title=candidates.find(x=>(x.textContent||'').trim()==='История');
+  if(!title) return;
+  const btn=document.createElement('button');
+  btn.id='exportHistoryBtn'; btn.type='button'; btn.textContent='Экспорт истории';
+  btn.addEventListener('click',exportTrackerHistory);
+  (title.parentElement||title).appendChild(btn);
+});
+v17HistoryObserver.observe(document.documentElement,{childList:true,subtree:true});
