@@ -45,12 +45,12 @@
 <div class="nav"><button id="prev" type="button">← Назад</button><button id="finish" class="finish" type="button">Завершить</button><button id="next" type="button">Далее →</button></div>
 <section id="finalPanel" class="panel hidden"><div style="font-weight:700;margin-bottom:7px">Финиш тренировки</div><div class="grid2"><label>Тяжесть /10<input id="difficulty" inputmode="numeric" placeholder="например 7"></label><label>Самое тяжёлое<input id="hardest" placeholder="упражнение"></label></div><label style="display:block;margin-top:6px">Общий дискомфорт / боль<input id="pain" placeholder="нет / где и что"></label><button id="makeSummary" class="done" type="button">Сформировать сводку</button></section>
 <section id="summaryPanel" class="panel hidden"><div class="summary-head"><div style="font-weight:700">Сводка для ChatGPT</div><button id="selectText" type="button">Выделить</button></div><textarea id="summary" readonly></textarea></section>
-<section id="historyPanel" class="panel hidden"><div class="summary-head"><div style="font-weight:700">История тренировок</div><button id="closeHistory" type="button">Закрыть</button></div><div id="historyList"></div></section>
+<section id="historyPanel" class="panel hidden"><div class="summary-head"><div style="font-weight:700">История тренировок</div><div style="display:flex;gap:6px"><button id="exportHistoryBtn" type="button">Экспорт</button><button id="closeHistory" type="button">Закрыть</button></div></div><div id="historyList"></div></section>
 <div id="status" style="font-size:13px;color:var(--muted);margin-top:6px" aria-live="polite"></div>
 <div class="install-note">Данные сохраняются только на этом устройстве. Для резервной копии сохраняй итоговые сводки.</div>
 </main>
 <script src="program.js"></script>
-<script src="app.js?v=1.7"></script>
+<script src="app.js?v=1.7.1"></script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).catch(()=>{}));}</script>
 </body>
 </html>
