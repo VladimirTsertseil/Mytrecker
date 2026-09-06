@@ -14,7 +14,7 @@ let timer=null,restSec=120,restRun=!!(restEnd&&restEnd>Date.now()),signaled=fals
 let soundEnabled=localStorage.getItem(SOUND_PREF)!=='off';
 const restSound=new Audio('./rest-whistle-v13.wav'); restSound.preload='auto'; restSound.volume=1;
 let soundUnlocked=false;
-const $=s=>root.querySelector(s),soundBtn=$('#soundBtn'),startWorkoutBtn=$('#startWorkout'),weightLabel=$('#weightLabel'),clock=$('#clock'),rclock=$('#restClock'),rlabel=$('#restLabel'),meta=$('#meta'),name=$('#name'),plan=$('#plan'),warm=$('#warm'),tabs=$('#tabs'),weight=$('#weight'),reps=$('#reps'),repLabel=$('#repLabel'),rir=$('#rir'),tech=$('#tech'),note=$('#note'),done=$('#done'),finalPanel=$('#finalPanel'),summaryPanel=$('#summaryPanel'),summary=$('#summary'),status=$('#status'),historyPanel=$('#historyPanel'),historyList=$('#historyList');
+const $=s=>root.querySelector(s),soundBtn=$('#soundBtn'),startWorkoutBtn=$('#startWorkout'),weightLabel=$('#weightLabel'),clock=$('#clock'),rclock=$('#restClock'),rlabel=$('#restLabel'),meta=$('#meta'),name=$('#name'),plan=$('#plan'),warm=$('#warm'),tabs=$('#tabs'),weight=$('#weight'),reps=$('#reps'),repLabel=$('#repLabel'),rir=$('#rir'),tech=$('#tech'),note=$('#note'),done=$('#done'),finalPanel=$('#finalPanel'),summaryPanel=$('#summaryPanel'),summary=$('#summary'),status=$('#status'),historyPanel=$('#historyPanel'),historyList=$('#historyList'),restControls=$('#restControls');
 $('#version').textContent='Программа '+PROGRAM.version;
 
 function updateSoundButton(){
@@ -44,6 +44,21 @@ function playRestSound(){
 
 function persist(){try{localStorage.setItem(STORAGE,JSON.stringify({S,R,started,finished,restEnd,programVersion:PROGRAM.version}))}catch(e){}}
 function clearTimerLoop(){if(timer){clearInterval(timer);timer=null}}
+function syncLifecycleUI(){
+  const active=!!(started&&!finished);
+  if(startWorkoutBtn) startWorkoutBtn.style.display=active?'none':'inline-flex';
+  if(restControls) restControls.style.display=restRun?'flex':'none';
+  if(!restRun){
+    if(restSec===0){
+      rclock.textContent='00:00';
+      rlabel.textContent='Отдых закончен';
+    }else{
+      rclock.textContent='02:00';
+      rlabel.textContent='Отдых 2:00';
+    }
+  }
+}
+
 function resetLiveWorkout(preserveRoutine=true){
   const keepR=preserveRoutine?R:'C';
   S={A:mk('A'),B:mk('B'),C:mk('C')};
@@ -56,6 +71,7 @@ function resetLiveWorkout(preserveRoutine=true){
   $('#difficulty').value='';$('#hardest').value='';$('#pain').value='';
   finalPanel.classList.add('hidden');
   persist();
+  syncLifecycleUI();
 }
 function beginWorkout(){
   if(started&&!finished){
@@ -64,8 +80,15 @@ function beginWorkout(){
   }else if(finished){
     resetLiveWorkout(true);
   }
-  if(!started){started=Date.now();finished=null;if(!timer)timer=setInterval(tick,250);persist();tick()}
+  started=Date.now();
+  finished=null;
+  restRun=false;restEnd=null;restSec=120;signaled=false;
+  clearTimerLoop();
+  timer=setInterval(tick,250);
+  persist();
+  syncLifecycleUI();
   status.textContent=`Тренировка ${R} начата`;
+  tick();
   render();
 }
 
@@ -74,12 +97,12 @@ function fmtR(s){s=Math.max(0,Math.ceil(s||0));return String(Math.floor(s/60)).p
 function cur(){const r=S[R],p=P[R][r.ex],item=r.items[r.ex];return{r,p,item,set:item.sets[r.set]}}
 function saveFields(){const c=cur();c.set.weight=weight.value.trim().replace(',','.');c.set.reps=reps.value.trim();c.item.rir=rir.value;c.item.tech=tech.value;c.item.note=note.value.trim();persist()}
 function startClock(){if(started&&!finished)return;started=Date.now();finished=null;if(!timer)timer=setInterval(tick,250);persist()}
-function tick(){if(started)clock.textContent=fmt(((finished||Date.now())-started)/1000);if(restRun&&restEnd){const left=Math.max(0,(restEnd-Date.now())/1000);restSec=Math.ceil(left);rclock.textContent=fmtR(restSec);rlabel.textContent='Отдых '+fmtR(restSec).replace(/^00:/,'');if(left<=0){restRun=false;restEnd=null;restSec=0;rclock.textContent='00:00';rlabel.textContent='Отдых 0:00';if(!signaled){signaled=true;status.textContent='Отдых закончен';playRestSound()}persist()}}}
-function startRest(){restSec=120;restEnd=Date.now()+120000;restRun=true;signaled=false;if(!timer)timer=setInterval(tick,250);tick();persist()}
-function adjust(d){if(restRun&&restEnd)restEnd=Math.max(Date.now(),restEnd+d*1000);else {restSec=Math.max(0,restSec+d);restEnd=Date.now()+restSec*1000;restRun=restSec>0}tick();persist()}
-function skip(){restRun=false;restEnd=null;restSec=0;rclock.textContent='00:00';rlabel.textContent='Отдых 0:00';persist()}
+function tick(){if(started)clock.textContent=fmt(((finished||Date.now())-started)/1000);if(restRun&&restEnd){const left=Math.max(0,(restEnd-Date.now())/1000);restSec=Math.ceil(left);rclock.textContent=fmtR(restSec);rlabel.textContent='Отдых '+fmtR(restSec).replace(/^00:/,'');if(left<=0){restRun=false;restEnd=null;restSec=0;rclock.textContent='00:00';rlabel.textContent='Отдых закончен';if(restControls)restControls.style.display='none';if(!signaled){signaled=true;status.textContent='Отдых закончен';playRestSound()}persist()}}}
+function startRest(){restSec=120;restEnd=Date.now()+120000;restRun=true;signaled=false;if(restControls)restControls.style.display='flex';if(!timer)timer=setInterval(tick,250);tick();persist()}
+function adjust(d){if(!restRun||!restEnd)return;restEnd=Math.max(Date.now(),restEnd+d*1000);tick();persist()}tick();persist()}
+function skip(){if(!restRun)return;restRun=false;restEnd=null;restSec=0;rclock.textContent='00:00';rlabel.textContent='Отдых закончен';if(restControls)restControls.style.display='none';persist()}
 function render(){const r=S[R],p=P[R][r.ex],item=r.items[r.ex],s=item.sets[r.set];root.querySelectorAll('[data-routine]').forEach(b=>b.classList.toggle('active',b.dataset.routine===R));meta.textContent=`${r.ex+1}/${P[R].length} · подход ${r.set+1}/${p.sets}`;name.textContent=p.name;plan.textContent=p.plan;warm.textContent=p.warm||'';warm.style.display=p.warm?'block':'none';repLabel.textContent=p.label||'Повторы';weightLabel.textContent=(R==='C'&&r.ex===7)?'Деления':'Вес, кг';tabs.innerHTML='';item.sets.forEach((st,i)=>{const b=document.createElement('button');b.type='button';b.className='setbtn'+(i===r.set?' active':'');b.textContent=(st.done?'✓':'')+(i+1);b.addEventListener('click',()=>{saveFields();r.set=i;r.edit=st.done;persist();render()});tabs.appendChild(b)});weight.value=s.weight||'';reps.value=s.reps||'';rir.value=item.rir||'';tech.value=item.tech||'';note.value=item.note||'';done.textContent=r.edit?'Сохранить':'✓ Готово';$('#prev').disabled=r.ex===0;$('#next').disabled=r.ex===P[R].length-1;$('#prev').classList.toggle('disabled',r.ex===0);$('#next').classList.toggle('disabled',r.ex===P[R].length-1);tick()}
-$('#setForm').addEventListener('submit',e=>{e.preventDefault();unlockSound();const r=S[R],c=cur(),w=weight.value.trim().replace(',','.'),rp=reps.value.trim();if(w&&(!Number.isFinite(Number(w))||Number(w)<0)){status.textContent='Проверь вес';weight.focus();return}if(rp&&(!Number.isFinite(Number(rp))||Number(rp)<0)){status.textContent='Проверь значение';reps.focus();return}c.set.weight=w;c.set.reps=rp;c.item.rir=rir.value;c.item.tech=tech.value;c.item.note=note.value.trim();if(r.edit){c.set.done=true;r.edit=false;status.textContent='Подход сохранён';persist();render();return}c.set.done=true;startClock();startRest();if(r.set+1<c.item.sets.length){const n=c.item.sets[r.set+1];if(!n.done){n.weight=w;n.reps=rp}r.set++}status.textContent='Подход выполнен';persist();render()});
+$('#setForm').addEventListener('submit',e=>{e.preventDefault();unlockSound();const r=S[R],c=cur(),w=weight.value.trim().replace(',','.'),rp=reps.value.trim();if(w&&(!Number.isFinite(Number(w))||Number(w)<0)){status.textContent='Проверь вес';weight.focus();return}if(rp&&(!Number.isFinite(Number(rp))||Number(rp)<0)){status.textContent='Проверь значение';reps.focus();return}c.set.weight=w;c.set.reps=rp;c.item.rir=rir.value;c.item.tech=tech.value;c.item.note=note.value.trim();if(r.edit){c.set.done=true;r.edit=false;status.textContent='Подход сохранён';persist();render();return}if(!started||finished){status.textContent='Сначала нажми «Начать тренировку»';return}c.set.done=true;startRest();if(r.set+1<c.item.sets.length){const n=c.item.sets[r.set+1];if(!n.done){n.weight=w;n.reps=rp}r.set++}status.textContent='Подход выполнен';persist();render()});
 root.querySelectorAll('[data-routine]').forEach(b=>b.addEventListener('click',()=>{saveFields();R=b.dataset.routine;summaryPanel.classList.add('hidden');finalPanel.classList.add('hidden');historyPanel.classList.add('hidden');persist();render()}));
 $('#minus').addEventListener('click',()=>adjust(-30));$('#plus').addEventListener('click',()=>adjust(30));$('#skip').addEventListener('click',skip);
 $('#prev').addEventListener('click',()=>{saveFields();const r=S[R];if(r.ex>0){r.ex--;r.set=0;r.edit=false;persist();render()}});
@@ -96,6 +119,7 @@ $('#finish').addEventListener('click',()=>{
   finalPanel.classList.remove('hidden');
   summaryPanel.classList.add('hidden');
   status.textContent='Тренировка завершена · таймер и рабочие поля сброшены';
+  syncLifecycleUI();
   render();
 });
 function makeSummary(){
@@ -168,12 +192,12 @@ window.addEventListener('pagehide',saveFields);document.addEventListener('visibi
 if(started&&!finished&&!timer)timer=setInterval(tick,250);
 if(restRun&&!timer)timer=setInterval(tick,250);
 if(pendingFinish){finalPanel.classList.remove('hidden');clock.textContent='00:00:00';rclock.textContent='02:00';rlabel.textContent='Отдых 2:00'}
-updateSoundButton();render();
+updateSoundButton();syncLifecycleUI();render();
 })();
 
 
 // --- PWA update controls v1.3 ---
-const TRACKER_APP_VERSION = '1.4';
+const TRACKER_APP_VERSION = '1.5';
 
 async function forceTrackerUpdate() {
   const btn = document.getElementById('trackerUpdateBtn');
@@ -216,8 +240,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!sessionStorage.getItem('tracker116-reloaded-v14')) {
-      sessionStorage.setItem('tracker116-reloaded-v14', '1');
+    if (!sessionStorage.getItem('tracker116-reloaded-v15')) {
+      sessionStorage.setItem('tracker116-reloaded-v15', '1');
       window.location.reload();
     }
   });

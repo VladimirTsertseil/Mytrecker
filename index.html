@@ -40,7 +40,7 @@
 </form>
 <div class="metric"><span>RIR последнего</span><select id="rir"><option value="">—</option><option>0</option><option>0–1</option><option>1</option><option>1–2</option><option>2</option><option>2–3</option><option>3</option><option>3–4</option><option>4+</option></select></div>
 <div class="note-row"><select id="tech"><option value="">Техника —</option><option value="хорошая">Техника: хорошая</option><option value="нормальная">Техника: нормальная</option><option value="неуверенная">Техника: неуверенная</option></select><input id="note" placeholder="Ощущения / боль"></div>
-<div class="rest-row"><div id="restLabel" class="rest-label">Отдых 2:00</div><button id="minus" type="button">−30</button><button id="plus" type="button">+30</button><button id="skip" type="button">Пропуск</button></div>
+<div class="rest-row"><div id="restLabel" class="rest-label">Отдых 2:00</div><div id="restControls" style="display:none;gap:8px;align-items:center"><button id="minus" type="button">−30</button><button id="plus" type="button">+30</button><button id="skip" type="button">Пропуск</button></div></div>
 </section>
 <div class="nav"><button id="prev" type="button">← Назад</button><button id="finish" class="finish" type="button">Завершить</button><button id="next" type="button">Далее →</button></div>
 <section id="finalPanel" class="panel hidden"><div style="font-weight:700;margin-bottom:7px">Финиш тренировки</div><div class="grid2"><label>Тяжесть /10<input id="difficulty" inputmode="numeric" placeholder="например 7"></label><label>Самое тяжёлое<input id="hardest" placeholder="упражнение"></label></div><label style="display:block;margin-top:6px">Общий дискомфорт / боль<input id="pain" placeholder="нет / где и что"></label><button id="makeSummary" class="done" type="button">Сформировать сводку</button></section>
@@ -50,7 +50,7 @@
 <div class="install-note">Данные сохраняются только на этом устройстве. Для резервной копии сохраняй итоговые сводки.</div>
 </main>
 <script src="program.js"></script>
-<script src="app.js?v=1.4"></script>
+<script src="app.js?v=1.5"></script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).catch(()=>{}));}</script>
 </body>
 </html>
