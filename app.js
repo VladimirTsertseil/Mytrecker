@@ -10,7 +10,7 @@ function load(){try{const x=JSON.parse(localStorage.getItem(STORAGE));if(!x||x.p
 let state=load(),S=state.S,R=state.R,started=state.started,finished=state.finished,restEnd=state.restEnd;
 let timer=null,restSec=120,restRun=!!(restEnd&&restEnd>Date.now()),signaled=false;
 let soundEnabled=localStorage.getItem(SOUND_PREF)!=='off';
-const restSound=new Audio('./rest-whistle.wav'); restSound.preload='auto'; restSound.volume=1;
+const restSound=new Audio('./rest-whistle-v13.wav'); restSound.preload='auto'; restSound.volume=1;
 let soundUnlocked=false;
 const $=s=>root.querySelector(s),soundBtn=$('#soundBtn'),weightLabel=$('#weightLabel'),clock=$('#clock'),rclock=$('#restClock'),rlabel=$('#restLabel'),meta=$('#meta'),name=$('#name'),plan=$('#plan'),warm=$('#warm'),tabs=$('#tabs'),weight=$('#weight'),reps=$('#reps'),repLabel=$('#repLabel'),rir=$('#rir'),tech=$('#tech'),note=$('#note'),done=$('#done'),finalPanel=$('#finalPanel'),summaryPanel=$('#summaryPanel'),summary=$('#summary'),status=$('#status'),historyPanel=$('#historyPanel'),historyList=$('#historyList');
 $('#version').textContent='Программа '+PROGRAM.version;
@@ -69,3 +69,55 @@ $('#closeHistory').addEventListener('click',()=>historyPanel.classList.add('hidd
 window.addEventListener('pagehide',saveFields);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveFields()});
 if(started&&!finished&&!timer)timer=setInterval(tick,250);if(restRun&&!timer)timer=setInterval(tick,250);updateSoundButton();render();
 })();
+
+
+// --- PWA update controls v1.3 ---
+const TRACKER_APP_VERSION = '1.3';
+
+async function forceTrackerUpdate() {
+  const btn = document.getElementById('trackerUpdateBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Проверяю…'; }
+  try {
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        await reg.update();
+        if (reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+      }
+    }
+    // Reload from the server; SW v1.3 uses network-first for navigation/assets.
+    window.location.reload();
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Обновить';
+    }
+    alert('Не удалось проверить обновление. Проверь интернет и попробуй ещё раз.');
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const host = document.querySelector('header') || document.body;
+  if (!document.getElementById('trackerUpdateBtn')) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;gap:8px;align-items:center;justify-content:flex-end;margin:8px 0;';
+    const ver = document.createElement('span');
+    ver.textContent = 'v' + TRACKER_APP_VERSION;
+    ver.style.cssText = 'font-size:12px;opacity:.65;';
+    const btn = document.createElement('button');
+    btn.id = 'trackerUpdateBtn';
+    btn.type = 'button';
+    btn.textContent = '↻ Обновить';
+    btn.style.cssText = 'padding:8px 12px;border-radius:10px;border:1px solid currentColor;background:transparent;color:inherit;';
+    btn.addEventListener('click', forceTrackerUpdate);
+    wrap.append(ver, btn);
+    host.appendChild(wrap);
+  }
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!sessionStorage.getItem('tracker116-reloaded-v13')) {
+      sessionStorage.setItem('tracker116-reloaded-v13', '1');
+      window.location.reload();
+    }
+  });
+}
