@@ -10,7 +10,7 @@ function load(){try{const x=JSON.parse(localStorage.getItem(STORAGE));if(!x||x.p
 let state=load(),S=state.S,R=state.R,started=state.started,finished=state.finished,restEnd=state.restEnd;
 let timer=null,restSec=120,restRun=!!(restEnd&&restEnd>Date.now()),signaled=false;
 let soundEnabled=localStorage.getItem(SOUND_PREF)!=='off';
-const restSound=new Audio('./yeah-buddy.mp3'); restSound.preload='auto'; restSound.volume=1;
+const restSound=new Audio('./rest-whistle.wav'); restSound.preload='auto'; restSound.volume=1;
 let soundUnlocked=false;
 const $=s=>root.querySelector(s),soundBtn=$('#soundBtn'),weightLabel=$('#weightLabel'),clock=$('#clock'),rclock=$('#restClock'),rlabel=$('#restLabel'),meta=$('#meta'),name=$('#name'),plan=$('#plan'),warm=$('#warm'),tabs=$('#tabs'),weight=$('#weight'),reps=$('#reps'),repLabel=$('#repLabel'),rir=$('#rir'),tech=$('#tech'),note=$('#note'),done=$('#done'),finalPanel=$('#finalPanel'),summaryPanel=$('#summaryPanel'),summary=$('#summary'),status=$('#status'),historyPanel=$('#historyPanel'),historyList=$('#historyList');
 $('#version').textContent='Программа '+PROGRAM.version;
