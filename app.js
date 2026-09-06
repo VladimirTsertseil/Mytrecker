@@ -99,9 +99,9 @@ function saveFields(){const c=cur();c.set.weight=weight.value.trim().replace(','
 function startClock(){if(started&&!finished)return;started=Date.now();finished=null;if(!timer)timer=setInterval(tick,250);persist()}
 function tick(){if(started)clock.textContent=fmt(((finished||Date.now())-started)/1000);if(restRun&&restEnd){const left=Math.max(0,(restEnd-Date.now())/1000);restSec=Math.ceil(left);rclock.textContent=fmtR(restSec);rlabel.textContent='Отдых '+fmtR(restSec).replace(/^00:/,'');if(left<=0){restRun=false;restEnd=null;restSec=0;rclock.textContent='00:00';rlabel.textContent='Отдых закончен';if(restControls)restControls.style.display='none';if(!signaled){signaled=true;status.textContent='Отдых закончен';playRestSound()}persist()}}}
 function startRest(){restSec=120;restEnd=Date.now()+120000;restRun=true;signaled=false;if(restControls)restControls.style.display='flex';if(!timer)timer=setInterval(tick,250);tick();persist()}
-function adjust(d){if(!restRun||!restEnd)return;restEnd=Math.max(Date.now(),restEnd+d*1000);tick();persist()}tick();persist()}
+function adjust(d){if(!restRun||!restEnd)return;restEnd=Math.max(Date.now(),restEnd+d*1000);tick();persist()}
 function skip(){if(!restRun)return;restRun=false;restEnd=null;restSec=0;rclock.textContent='00:00';rlabel.textContent='Отдых закончен';if(restControls)restControls.style.display='none';persist()}
-function render(){const r=S[R],p=P[R][r.ex],item=r.items[r.ex],s=item.sets[r.set];root.querySelectorAll('[data-routine]').forEach(b=>b.classList.toggle('active',b.dataset.routine===R));meta.textContent=`${r.ex+1}/${P[R].length} · подход ${r.set+1}/${p.sets}`;name.textContent=p.name;plan.textContent=p.plan;warm.textContent=p.warm||'';warm.style.display=p.warm?'block':'none';repLabel.textContent=p.label||'Повторы';weightLabel.textContent=(R==='C'&&r.ex===7)?'Деления':'Вес, кг';tabs.innerHTML='';item.sets.forEach((st,i)=>{const b=document.createElement('button');b.type='button';b.className='setbtn'+(i===r.set?' active':'');b.textContent=(st.done?'✓':'')+(i+1);b.addEventListener('click',()=>{saveFields();r.set=i;r.edit=st.done;persist();render()});tabs.appendChild(b)});weight.value=s.weight||'';reps.value=s.reps||'';rir.value=item.rir||'';tech.value=item.tech||'';note.value=item.note||'';done.textContent=r.edit?'Сохранить':'✓ Готово';$('#prev').disabled=r.ex===0;$('#next').disabled=r.ex===P[R].length-1;$('#prev').classList.toggle('disabled',r.ex===0);$('#next').classList.toggle('disabled',r.ex===P[R].length-1);tick()}
+function render(){const r=S[R],p=P[R][r.ex],item=r.items[r.ex],s=item.sets[r.set];root.querySelectorAll('[data-routine]').forEach(b=>b.classList.toggle('active',b.dataset.routine===R));meta.textContent=`${r.ex+1}/${P[R].length} · подход ${r.set+1}/${p.sets}`;name.textContent=p.name;plan.textContent=p.plan;warm.textContent=p.warm||'';warm.style.display=p.warm?'block':'none';repLabel.textContent=p.label||'Повторы';weightLabel.textContent=(R==='C'&&r.ex===7)?'Деления':'Вес, кг';tabs.innerHTML='';item.sets.forEach((st,i)=>{const b=document.createElement('button');b.type='button';b.className='setbtn'+(i===r.set?' active':'');b.textContent=(st.done?'✓':'')+(i+1);b.addEventListener('click',()=>{saveFields();r.set=i;r.edit=st.done;persist();render()});tabs.appendChild(b)});weight.value=s.weight||'';reps.value=s.reps||'';rir.value=item.rir||'';tech.value=item.tech||'';note.value=item.note||'';done.textContent=r.edit?'Сохранить':'✓ Готово';$('#prev').disabled=r.ex===0;$('#next').disabled=r.ex===P[R].length-1;$('#prev').classList.toggle('disabled',r.ex===0);$('#next').classList.toggle('disabled',r.ex===P[R].length-1);tick();syncLifecycleUI();}
 $('#setForm').addEventListener('submit',e=>{e.preventDefault();unlockSound();const r=S[R],c=cur(),w=weight.value.trim().replace(',','.'),rp=reps.value.trim();if(w&&(!Number.isFinite(Number(w))||Number(w)<0)){status.textContent='Проверь вес';weight.focus();return}if(rp&&(!Number.isFinite(Number(rp))||Number(rp)<0)){status.textContent='Проверь значение';reps.focus();return}c.set.weight=w;c.set.reps=rp;c.item.rir=rir.value;c.item.tech=tech.value;c.item.note=note.value.trim();if(r.edit){c.set.done=true;r.edit=false;status.textContent='Подход сохранён';persist();render();return}if(!started||finished){status.textContent='Сначала нажми «Начать тренировку»';return}c.set.done=true;startRest();if(r.set+1<c.item.sets.length){const n=c.item.sets[r.set+1];if(!n.done){n.weight=w;n.reps=rp}r.set++}status.textContent='Подход выполнен';persist();render()});
 root.querySelectorAll('[data-routine]').forEach(b=>b.addEventListener('click',()=>{saveFields();R=b.dataset.routine;summaryPanel.classList.add('hidden');finalPanel.classList.add('hidden');historyPanel.classList.add('hidden');persist();render()}));
 $('#minus').addEventListener('click',()=>adjust(-30));$('#plus').addEventListener('click',()=>adjust(30));$('#skip').addEventListener('click',skip);
@@ -197,7 +197,7 @@ updateSoundButton();syncLifecycleUI();render();
 
 
 // --- PWA update controls v1.3 ---
-const TRACKER_APP_VERSION = '1.5';
+const TRACKER_APP_VERSION = '1.5.2';
 
 async function forceTrackerUpdate() {
   const btn = document.getElementById('trackerUpdateBtn');
@@ -240,8 +240,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!sessionStorage.getItem('tracker116-reloaded-v15')) {
-      sessionStorage.setItem('tracker116-reloaded-v15', '1');
+    if (!sessionStorage.getItem('tracker116-reloaded-v152')) {
+      sessionStorage.setItem('tracker116-reloaded-v152', '1');
       window.location.reload();
     }
   });
