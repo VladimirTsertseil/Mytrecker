@@ -152,7 +152,7 @@ function tick(){if(started)clock.textContent=fmt(((finished||Date.now())-started
 function startRest(){restSec=120;restEnd=Date.now()+120000;restRun=true;signaled=false;if(restControls)restControls.style.display='flex';if(!timer)timer=setInterval(tick,250);tick();persist()}
 function adjust(d){if(!restRun||!restEnd)return;restEnd=Math.max(Date.now(),restEnd+d*1000);tick();persist()}
 function skip(){if(!restRun)return;restRun=false;restEnd=null;restSec=0;rclock.textContent='00:00';rlabel.textContent='Отдых закончен';if(restControls)restControls.style.display='none';persist()}
-function render(){const r=S[R],p=P[R][r.ex],item=r.items[r.ex],s=item.sets[r.set];root.querySelectorAll('[data-routine]').forEach(b=>b.classList.toggle('active',b.dataset.routine===R));meta.textContent=`${r.ex+1}/${P[R].length} · подход ${r.set+1}/${p.sets}`;name.textContent=p.name;plan.textContent=p.plan;warm.textContent=p.warm||'';warm.style.display=p.warm?'block':'none';repLabel.textContent=p.label||'Повторы';weightLabel.textContent=(p.unit==='divisions')?'Деления':'Вес, кг';tabs.innerHTML='';item.sets.forEach((st,i)=>{const b=document.createElement('button');b.type='button';b.className='setbtn'+(i===r.set?' active':'');b.textContent=(st.done?'✓':'')+(i+1);b.addEventListener('click',()=>{saveFields();r.set=i;r.edit=st.done;persist();render()});tabs.appendChild(b)});weight.value=s.weight||'';reps.value=s.reps||'';rir.value=item.rir||'';tech.value=item.tech||'';note.value=item.note||'';done.textContent=r.edit?'Сохранить':'✓ Готово';$('#prev').disabled=r.ex===0;$('#next').disabled=r.ex===P[R].length-1;$('#prev').classList.toggle('disabled',r.ex===0);$('#next').classList.toggle('disabled',r.ex===P[R].length-1);tick();syncLifecycleUI();}
+function render(){const r=S[R],p=P[R][r.ex],item=r.items[r.ex],s=item.sets[r.set];root.querySelectorAll('[data-routine]').forEach(b=>b.classList.toggle('active',b.dataset.routine===R));meta.textContent=`${r.ex+1}/${P[R].length} · подход ${r.set+1}/${p.sets}`;name.textContent=p.name;plan.textContent=p.plan;warm.textContent=p.warm||'';warm.style.display=p.warm?'block':'none';repLabel.textContent=p.label||'Повторы';weightLabel.textContent=(p.unit==='divisions')?'Деления':'Вес, кг';tabs.innerHTML='';item.sets.forEach((st,i)=>{const b=document.createElement('button');b.type='button';b.className='setbtn'+(i===r.set?' active':'');b.textContent=(st.done?'✓':'')+(i+1);b.addEventListener('click',()=>{saveFields();r.set=i;r.edit=st.done;persist();render()});tabs.appendChild(b)});weight.value=s.weight||'';reps.value=s.reps||'';rir.value=item.rir||'';tech.value=item.tech||'';note.value=item.note||'';done.textContent=r.edit?'Сохранить':'✓ Готово';$('#prev').disabled=r.ex===0;$('#next').disabled=r.ex===P[R].length-1;$('#prev').classList.toggle('disabled',r.ex===0);$('#next').classList.toggle('disabled',r.ex===P[R].length-1);tick();syncLifecycleUI();syncEditedBadge();}
 $('#setForm').addEventListener('submit',e=>{e.preventDefault();unlockSound();const r=S[R],c=cur(),w=weight.value.trim().replace(',','.'),rp=reps.value.trim();if(w&&(!Number.isFinite(Number(w))||Number(w)<0)){status.textContent='Проверь вес';weight.focus();return}if(rp&&(!Number.isFinite(Number(rp))||Number(rp)<0)){status.textContent='Проверь значение';reps.focus();return}c.set.weight=w;c.set.reps=rp;c.item.rir=rir.value;c.item.tech=tech.value;c.item.note=note.value.trim();if(r.edit){c.set.done=true;r.edit=false;status.textContent='Подход сохранён';persist();render();return}if(!started||finished){status.textContent='Сначала нажми «Начать тренировку»';return}c.set.done=true;startRest();if(r.set+1<c.item.sets.length){const n=c.item.sets[r.set+1];if(!n.done){n.weight=w;n.reps=rp}r.set++}status.textContent='Подход выполнен';persist();render()});
 root.querySelectorAll('[data-routine]').forEach(b=>b.addEventListener('click',()=>{
   const nextR=b.dataset.routine;
@@ -343,6 +343,15 @@ function openPlanEditor(r,ei){
 }
 function closePlanEditor(){$('#planEditorModal').classList.add('hidden')}
 $('#closePlanEditor').addEventListener('click',closePlanEditor);
+$('#editPlanBtn').addEventListener('click',()=>openPlanEditor(R,S[R].ex));
+
+function syncEditedBadge(){
+  const badge=$('#editedBadge');
+  if(!badge)return;
+  const edited=!!overrideFor(R,S[R].ex);
+  badge.classList.toggle('hidden',!edited);
+}
+
 
 $('#savePlanEdit').addEventListener('click',()=>{
   if(editorRoutine==null||editorExercise==null)return;
@@ -391,33 +400,11 @@ $('#resetPlanEdit').addEventListener('click',()=>{
   location.reload();
 });
 
-function addEditButtons(){
-  root.querySelectorAll('.ex').forEach((el,idx)=>{
-    if(el.querySelector('.plan-edit-btn'))return;
-    const title=el.querySelector('.ex-title')||el.querySelector('h3')||el.firstElementChild;
-    if(!title)return;
-    const b=document.createElement('button');
-    b.type='button'; b.className='plan-edit-btn'; b.textContent='✎';
-    b.title='Редактировать план';
-    b.addEventListener('click',(e)=>{e.stopPropagation();openPlanEditor(R,idx)});
-    title.appendChild(b);
-    if(overrideFor(R,idx)){
-      const badge=document.createElement('span');
-      badge.className='edited-badge';
-      badge.textContent='изменено';
-      title.appendChild(badge);
-    }
-  });
-}
-const originalRender=render;
-render=function(){originalRender();setTimeout(addEditButtons,0)};
-setTimeout(addEditButtons,0);
-
 })();
 
 
 // --- PWA update controls v1.3 ---
-const TRACKER_APP_VERSION = '1.8';
+const TRACKER_APP_VERSION = '1.8.2';
 
 async function forceTrackerUpdate() {
   const btn = document.getElementById('trackerUpdateBtn');
@@ -439,30 +426,19 @@ async function forceTrackerUpdate() {
   }
 }
 
-window.addEventListener('DOMContentLoaded', () => {
-  const host = document.querySelector('header') || document.body;
-  if (!document.getElementById('trackerUpdateBtn')) {
-    const wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;gap:8px;align-items:center;justify-content:flex-end;margin:8px 0;';
-    const ver = document.createElement('span');
-    ver.textContent = 'v' + TRACKER_APP_VERSION;
-    ver.style.cssText = 'font-size:12px;opacity:.65;';
-    const btn = document.createElement('button');
-    btn.id = 'trackerUpdateBtn';
-    btn.type = 'button';
-    btn.textContent = '↻ Обновить';
-    btn.style.cssText = 'padding:8px 12px;border-radius:10px;border:1px solid currentColor;background:transparent;color:inherit;';
-    btn.addEventListener('click', forceTrackerUpdate);
-    wrap.append(ver, btn);
-    host.appendChild(wrap);
-  }
-});
-
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!sessionStorage.getItem('tracker116-reloaded-v18')) {
-      sessionStorage.setItem('tracker116-reloaded-v18', '1');
+    if (!sessionStorage.getItem('tracker116-reloaded-v182')) {
+      sessionStorage.setItem('tracker116-reloaded-v182', '1');
       window.location.reload();
     }
   });
 }
+
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const v=document.getElementById('appVersionLabel');
+  if(v)v.textContent='v'+TRACKER_APP_VERSION;
+  const b=document.getElementById('trackerUpdateBtn');
+  if(b)b.addEventListener('click',forceTrackerUpdate);
+});

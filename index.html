@@ -23,7 +23,7 @@
 .modal-card{width:min(680px,100%);max-height:90vh;overflow:auto;background:#161616;border:1px solid #333;border-radius:16px;padding:14px}
 .modal-card label{display:block;margin:10px 0;font-size:14px}
 .modal-card input,.modal-card textarea{width:100%;box-sizing:border-box;margin-top:5px}
-.plan-edit-btn{margin-left:8px;padding:3px 8px;font-size:14px}
+.plan-edit-btn{min-width:42px;min-height:42px;padding:0 10px;font-size:20px;line-height:1}
 .edited-badge{font-size:12px;opacity:.8;margin-left:6px}
 button.disabled,button:disabled{opacity:.45;pointer-events:none}
 </style>
@@ -31,7 +31,17 @@ button.disabled,button:disabled{opacity:.45;pointer-events:none}
 </head>
 <body>
 <main id="app">
-<div class="tools"><div class="small" id="version"></div><div style="display:flex;gap:6px"><button id="soundBtn" type="button" aria-pressed="true">🔊 Звук</button><button id="historyBtn" type="button">История</button></div></div>
+<div class="tools">
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+    <div class="small" id="version"></div>
+    <span id="appVersionLabel" class="small">v1.8.2</span>
+    <button id="trackerUpdateBtn" type="button">↻ Обновить</button>
+  </div>
+  <div style="display:flex;gap:6px">
+    <button id="soundBtn" type="button" aria-pressed="true">🔊 Звук</button>
+    <button id="historyBtn" type="button">История</button>
+  </div>
+</div>
 <div class="top">
   <div class="routines"><button data-routine="A" type="button">A</button><button data-routine="B" type="button">B</button><button data-routine="C" type="button">C</button></div>
   <div><div class="timer-title">Время</div><div id="clock" class="timer">00:00:00</div></div>
@@ -39,7 +49,16 @@ button.disabled,button:disabled{opacity:.45;pointer-events:none}
 <div class="start-row"><button id="startWorkout" type="button">▶ Начать тренировку</button></div>
 <section class="card">
 <div class="head">
-  <div><div id="meta" class="meta"></div><div id="name" class="name"></div><div id="plan" class="plan"></div><div id="warm" class="warm"></div></div>
+  <div>
+  <div id="meta" class="meta"></div>
+  <div style="display:flex;align-items:flex-start;gap:8px">
+    <div id="name" class="name" style="flex:1"></div>
+    <button id="editPlanBtn" class="plan-edit-btn" type="button" title="Редактировать план">✎</button>
+  </div>
+  <div id="editedBadge" class="edited-badge hidden">изменено локально</div>
+  <div id="plan" class="plan"></div>
+  <div id="warm" class="warm"></div>
+</div>
   <div class="rest-wrap"><div class="meta">Отдых</div><div id="restClock" class="timer">02:00</div></div>
 </div>
 <div id="tabs" class="sets"></div>
@@ -62,7 +81,7 @@ button.disabled,button:disabled{opacity:.45;pointer-events:none}
 <div class="install-note">Данные сохраняются только на этом устройстве. Для резервной копии сохраняй итоговые сводки.</div>
 </main>
 <script src="program.js"></script>
-<script src="app.js?v=1.8"></script>
+<script src="app.js?v=1.8.2"></script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).catch(()=>{}));}</script>
 
 <div id="planEditorModal" class="modal hidden">
