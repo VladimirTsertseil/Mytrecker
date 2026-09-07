@@ -299,11 +299,125 @@ if(started&&!finished&&!timer)timer=setInterval(tick,250);
 if(restRun&&!timer)timer=setInterval(tick,250);
 if(pendingFinish){finalPanel.classList.remove('hidden');clock.textContent='00:00:00';rclock.textContent='02:00';rlabel.textContent='Отдых 2:00'}
 updateSoundButton();syncLifecycleUI();render();
+
+// --- v1.8 local plan editor ---
+const PLAN_OVERRIDES='tracker116-plan-overrides-v1';
+let editorRoutine=null, editorExercise=null;
+
+function getOverrides(){
+  try{return JSON.parse(localStorage.getItem(PLAN_OVERRIDES)||'{}')||{}}
+  catch(e){return{}}
+}
+function setOverrides(v){localStorage.setItem(PLAN_OVERRIDES,JSON.stringify(v))}
+function overrideFor(r,ei){
+  const o=getOverrides();
+  return o?.[r]?.[ei]||null;
+}
+function effectiveExercise(r,ei){
+  const base=P[r][ei];
+  const ov=overrideFor(r,ei);
+  return ov ? {...base,...ov} : base;
+}
+function applyOverrideToProgram(){
+  const o=getOverrides();
+  ['A','B','C'].forEach(r=>{
+    if(!o[r])return;
+    Object.keys(o[r]).forEach(k=>{
+      const i=Number(k);
+      if(P[r] && P[r][i]) P[r][i]={...P[r][i],...o[r][k]};
+    });
+  });
+}
+applyOverrideToProgram();
+
+function openPlanEditor(r,ei){
+  editorRoutine=r; editorExercise=ei;
+  const p=effectiveExercise(r,ei);
+  $('#planEditorName').textContent=`${r}: ${p.name}`;
+  $('#editPlanText').value=p.plan||'';
+  $('#editWeight').value=p.w??'';
+  $('#editSetsCount').value=p.sets||((p.t||[]).length||1);
+  $('#editTargets').value=(p.t||[]).join(',');
+  $('#editWarmText').value=p.warm||'';
+  $('#planEditorModal').classList.remove('hidden');
+}
+function closePlanEditor(){$('#planEditorModal').classList.add('hidden')}
+$('#closePlanEditor').addEventListener('click',closePlanEditor);
+
+$('#savePlanEdit').addEventListener('click',()=>{
+  if(editorRoutine==null||editorExercise==null)return;
+  const sets=Math.max(1,Math.min(12,Number($('#editSetsCount').value)||1));
+  let targets=$('#editTargets').value.split(',').map(x=>x.trim()).filter(Boolean).map(Number).filter(Number.isFinite);
+  if(!targets.length) targets=Array.from({length:sets},()=>0);
+  if(targets.length<sets) targets=targets.concat(Array.from({length:sets-targets.length},()=>targets[targets.length-1]||0));
+  if(targets.length>sets) targets=targets.slice(0,sets);
+  const ov={
+    plan:$('#editPlanText').value.trim(),
+    sets,
+    t:targets,
+    warm:$('#editWarmText').value.trim()
+  };
+  const weight=$('#editWeight').value.trim();
+  if(weight!=='') ov.w=weight; else delete ov.w;
+
+  const all=getOverrides();
+  all[editorRoutine]=all[editorRoutine]||{};
+  all[editorRoutine][editorExercise]=ov;
+  setOverrides(all);
+
+  P[editorRoutine][editorExercise]={...P[editorRoutine][editorExercise],...ov};
+
+  // Rebuild live state for this exercise only if set count changed and workout not active.
+  if(!(started&&!finished)){
+    const item=S[editorRoutine].items[editorExercise];
+    item.sets=targets.map((rep,i)=>({
+      weight: weight!=='' ? weight : (item.sets?.[i]?.weight ?? ''),
+      reps: rep,
+      done:false
+    }));
+  }
+  persist();
+  closePlanEditor();
+  render();
+  status.textContent='План упражнения обновлён локально';
+});
+
+$('#resetPlanEdit').addEventListener('click',()=>{
+  if(editorRoutine==null||editorExercise==null)return;
+  const all=getOverrides();
+  if(all[editorRoutine]) delete all[editorRoutine][editorExercise];
+  if(all[editorRoutine] && !Object.keys(all[editorRoutine]).length) delete all[editorRoutine];
+  setOverrides(all);
+  location.reload();
+});
+
+function addEditButtons(){
+  root.querySelectorAll('.ex').forEach((el,idx)=>{
+    if(el.querySelector('.plan-edit-btn'))return;
+    const title=el.querySelector('.ex-title')||el.querySelector('h3')||el.firstElementChild;
+    if(!title)return;
+    const b=document.createElement('button');
+    b.type='button'; b.className='plan-edit-btn'; b.textContent='✎';
+    b.title='Редактировать план';
+    b.addEventListener('click',(e)=>{e.stopPropagation();openPlanEditor(R,idx)});
+    title.appendChild(b);
+    if(overrideFor(R,idx)){
+      const badge=document.createElement('span');
+      badge.className='edited-badge';
+      badge.textContent='изменено';
+      title.appendChild(badge);
+    }
+  });
+}
+const originalRender=render;
+render=function(){originalRender();setTimeout(addEditButtons,0)};
+setTimeout(addEditButtons,0);
+
 })();
 
 
 // --- PWA update controls v1.3 ---
-const TRACKER_APP_VERSION = '1.7.2';
+const TRACKER_APP_VERSION = '1.8';
 
 async function forceTrackerUpdate() {
   const btn = document.getElementById('trackerUpdateBtn');
@@ -346,8 +460,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!sessionStorage.getItem('tracker116-reloaded-v172')) {
-      sessionStorage.setItem('tracker116-reloaded-v172', '1');
+    if (!sessionStorage.getItem('tracker116-reloaded-v18')) {
+      sessionStorage.setItem('tracker116-reloaded-v18', '1');
       window.location.reload();
     }
   });
