@@ -385,9 +385,27 @@ document.addEventListener('click',function(e){
     all[editorRoutine][editorExercise]=ov;
     setOverrides(all);
     P[editorRoutine][editorExercise]={...P[editorRoutine][editorExercise],...ov};
-    if(!(started&&!finished)){
+    {
       const item=S[editorRoutine].items[editorExercise];
-      item.sets=targets.map((rep,i)=>({weight:weight!==''?weight:(item.sets?.[i]?.weight??''),reps:rep,done:false}));
+      const oldSets=Array.isArray(item.sets)?item.sets:[];
+      const rebuilt=[];
+      for(let i=0;i<sets;i++){
+        const old=oldSets[i];
+        // Уже выполненные подходы сохраняем как факт тренировки.
+        if(old && old.done){
+          rebuilt.push({...old});
+        }else{
+          rebuilt.push({
+            weight: weight!=='' ? weight : (old?.weight ?? ''),
+            reps: targets[i] ?? (old?.reps ?? 0),
+            done:false
+          });
+        }
+      }
+      item.sets=rebuilt;
+      // Если текущий индекс оказался за пределами после уменьшения числа подходов —
+      // переносим его на последний доступный подход.
+      if(item.set>=sets)item.set=Math.max(0,sets-1);
     }
     persist(); closePlanEditor(); render();
     status.textContent='План упражнения обновлён локально';
@@ -408,7 +426,7 @@ document.addEventListener('click',function(e){
 
 
 // --- PWA update controls v1.3 ---
-const TRACKER_APP_VERSION = '1.8.4';
+const TRACKER_APP_VERSION = '1.8.5';
 
 async function forceTrackerUpdate() {
   const btn = document.getElementById('trackerUpdateBtn');
@@ -432,8 +450,8 @@ async function forceTrackerUpdate() {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!sessionStorage.getItem('tracker116-reloaded-v184')) {
-      sessionStorage.setItem('tracker116-reloaded-v184', '1');
+    if (!sessionStorage.getItem('tracker116-reloaded-v185')) {
+      sessionStorage.setItem('tracker116-reloaded-v185', '1');
       window.location.reload();
     }
   });
