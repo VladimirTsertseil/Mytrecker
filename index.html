@@ -34,7 +34,7 @@ button.disabled,button:disabled{opacity:.45;pointer-events:none}
 <div class="tools">
   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
     <div class="small" id="version"></div>
-    <span id="appVersionLabel" class="small">v1.8.3</span>
+    <span id="appVersionLabel" class="small">v1.8.4</span>
     <button id="trackerUpdateBtn" type="button">↻ Обновить</button>
   </div>
   <div style="display:flex;gap:6px">
@@ -79,11 +79,6 @@ button.disabled,button:disabled{opacity:.45;pointer-events:none}
 <section id="historyPanel" class="panel hidden"><div class="summary-head"><div style="font-weight:700">История тренировок</div><div style="display:flex;gap:6px"><button id="exportHistoryBtn" type="button">Экспорт</button><button id="closeHistory" type="button">Закрыть</button></div></div><div id="historyList"></div></section>
 <div id="status" style="font-size:13px;color:var(--muted);margin-top:6px" aria-live="polite"></div>
 <div class="install-note">Данные сохраняются только на этом устройстве. Для резервной копии сохраняй итоговые сводки.</div>
-</main>
-<script src="program.js"></script>
-<script src="app.js?v=1.8.3"></script>
-<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).catch(()=>{}));}</script>
-
 <div id="planEditorModal" class="modal hidden">
   <div class="modal-card">
     <div class="summary-head">
@@ -111,6 +106,12 @@ button.disabled,button:disabled{opacity:.45;pointer-events:none}
       <button id="resetPlanEdit" type="button">Вернуть по плану</button>
     </div>
   </div>
+</main>
+<script src="program.js"></script>
+<script src="app.js?v=1.8.4"></script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).catch(()=>{}));}</script>
+
+
 </div>
 
 </body>
