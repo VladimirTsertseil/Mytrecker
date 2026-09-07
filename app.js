@@ -342,9 +342,6 @@ function openPlanEditor(r,ei){
   $('#planEditorModal').classList.remove('hidden');
 }
 function closePlanEditor(){$('#planEditorModal').classList.add('hidden')}
-$('#closePlanEditor').addEventListener('click',closePlanEditor);
-$('#editPlanBtn').addEventListener('click',()=>openPlanEditor(R,S[R].ex));
-
 function syncEditedBadge(){
   const badge=$('#editedBadge');
   if(!badge)return;
@@ -353,58 +350,79 @@ function syncEditedBadge(){
 }
 
 
-$('#savePlanEdit').addEventListener('click',()=>{
-  if(editorRoutine==null||editorExercise==null)return;
-  const sets=Math.max(1,Math.min(12,Number($('#editSetsCount').value)||1));
-  let targets=$('#editTargets').value.split(',').map(x=>x.trim()).filter(Boolean).map(Number).filter(Number.isFinite);
-  if(!targets.length) targets=Array.from({length:sets},()=>0);
-  if(targets.length<sets) targets=targets.concat(Array.from({length:sets-targets.length},()=>targets[targets.length-1]||0));
-  if(targets.length>sets) targets=targets.slice(0,sets);
-  const ov={
-    plan:$('#editPlanText').value.trim(),
-    sets,
-    t:targets,
-    warm:$('#editWarmText').value.trim()
-  };
-  const weight=$('#editWeight').value.trim();
-  if(weight!=='') ov.w=weight; else delete ov.w;
 
-  const all=getOverrides();
-  all[editorRoutine]=all[editorRoutine]||{};
-  all[editorRoutine][editorExercise]=ov;
-  setOverrides(all);
+function bindPlanEditorUI(){
+  const closeBtn=$('#closePlanEditor');
+  const editBtn=$('#editPlanBtn');
+  const saveBtn=$('#savePlanEdit');
+  const resetBtn=$('#resetPlanEdit');
+  const modal=$('#planEditorModal');
 
-  P[editorRoutine][editorExercise]={...P[editorRoutine][editorExercise],...ov};
+  if(closeBtn) closeBtn.addEventListener('click',closePlanEditor);
+  if(editBtn) editBtn.addEventListener('click',()=>openPlanEditor(R,S[R].ex));
 
-  // Rebuild live state for this exercise only if set count changed and workout not active.
-  if(!(started&&!finished)){
-    const item=S[editorRoutine].items[editorExercise];
-    item.sets=targets.map((rep,i)=>({
-      weight: weight!=='' ? weight : (item.sets?.[i]?.weight ?? ''),
-      reps: rep,
-      done:false
-    }));
-  }
-  persist();
-  closePlanEditor();
-  render();
-  status.textContent='План упражнения обновлён локально';
-});
+  if(saveBtn) saveBtn.addEventListener('click',()=>{
+    if(editorRoutine==null||editorExercise==null)return;
+    const sets=Math.max(1,Math.min(12,Number($('#editSetsCount').value)||1));
+    let targets=$('#editTargets').value.split(',').map(x=>x.trim()).filter(Boolean).map(Number).filter(Number.isFinite);
+    if(!targets.length) targets=Array.from({length:sets},()=>0);
+    if(targets.length<sets) targets=targets.concat(Array.from({length:sets-targets.length},()=>targets[targets.length-1]||0));
+    if(targets.length>sets) targets=targets.slice(0,sets);
 
-$('#resetPlanEdit').addEventListener('click',()=>{
-  if(editorRoutine==null||editorExercise==null)return;
-  const all=getOverrides();
-  if(all[editorRoutine]) delete all[editorRoutine][editorExercise];
-  if(all[editorRoutine] && !Object.keys(all[editorRoutine]).length) delete all[editorRoutine];
-  setOverrides(all);
-  location.reload();
-});
+    const ov={
+      plan:$('#editPlanText').value.trim(),
+      sets,
+      t:targets,
+      warm:$('#editWarmText').value.trim()
+    };
+    const weight=$('#editWeight').value.trim();
+    if(weight!=='') ov.w=weight;
+
+    const all=getOverrides();
+    all[editorRoutine]=all[editorRoutine]||{};
+    all[editorRoutine][editorExercise]=ov;
+    setOverrides(all);
+
+    P[editorRoutine][editorExercise]={...P[editorRoutine][editorExercise],...ov};
+
+    if(!(started&&!finished)){
+      const item=S[editorRoutine].items[editorExercise];
+      item.sets=targets.map((rep,i)=>({
+        weight: weight!=='' ? weight : (item.sets?.[i]?.weight ?? ''),
+        reps: rep,
+        done:false
+      }));
+    }
+    persist();
+    closePlanEditor();
+    render();
+    status.textContent='План упражнения обновлён локально';
+  });
+
+  if(resetBtn) resetBtn.addEventListener('click',()=>{
+    if(editorRoutine==null||editorExercise==null)return;
+    const all=getOverrides();
+    if(all[editorRoutine]) delete all[editorRoutine][editorExercise];
+    if(all[editorRoutine] && !Object.keys(all[editorRoutine]).length) delete all[editorRoutine];
+    setOverrides(all);
+    location.reload();
+  });
+
+  if(modal) modal.addEventListener('click',(e)=>{
+    if(e.target===modal) closePlanEditor();
+  });
+}
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',bindPlanEditorUI,{once:true});
+}else{
+  bindPlanEditorUI();
+}
 
 })();
 
 
 // --- PWA update controls v1.3 ---
-const TRACKER_APP_VERSION = '1.8.2';
+const TRACKER_APP_VERSION = '1.8.3';
 
 async function forceTrackerUpdate() {
   const btn = document.getElementById('trackerUpdateBtn');
@@ -428,8 +446,8 @@ async function forceTrackerUpdate() {
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!sessionStorage.getItem('tracker116-reloaded-v182')) {
-      sessionStorage.setItem('tracker116-reloaded-v182', '1');
+    if (!sessionStorage.getItem('tracker116-reloaded-v183')) {
+      sessionStorage.setItem('tracker116-reloaded-v183', '1');
       window.location.reload();
     }
   });

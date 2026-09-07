@@ -18,12 +18,12 @@
 </style>
 
 <style>
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center;z-index:9999;padding:12px}
+.modal{pointer-events:auto;position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:flex-end;justify-content:center;z-index:9999;padding:12px}
 .modal.hidden{display:none}
 .modal-card{width:min(680px,100%);max-height:90vh;overflow:auto;background:#161616;border:1px solid #333;border-radius:16px;padding:14px}
 .modal-card label{display:block;margin:10px 0;font-size:14px}
 .modal-card input,.modal-card textarea{width:100%;box-sizing:border-box;margin-top:5px}
-.plan-edit-btn{min-width:42px;min-height:42px;padding:0 10px;font-size:20px;line-height:1}
+.plan-edit-btn{min-width:42px;min-height:42px;padding:0 10px;font-size:20px;line-height:1;position:relative;z-index:2;pointer-events:auto}
 .edited-badge{font-size:12px;opacity:.8;margin-left:6px}
 button.disabled,button:disabled{opacity:.45;pointer-events:none}
 </style>
@@ -34,7 +34,7 @@ button.disabled,button:disabled{opacity:.45;pointer-events:none}
 <div class="tools">
   <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
     <div class="small" id="version"></div>
-    <span id="appVersionLabel" class="small">v1.8.2</span>
+    <span id="appVersionLabel" class="small">v1.8.3</span>
     <button id="trackerUpdateBtn" type="button">↻ Обновить</button>
   </div>
   <div style="display:flex;gap:6px">
@@ -81,7 +81,7 @@ button.disabled,button:disabled{opacity:.45;pointer-events:none}
 <div class="install-note">Данные сохраняются только на этом устройстве. Для резервной копии сохраняй итоговые сводки.</div>
 </main>
 <script src="program.js"></script>
-<script src="app.js?v=1.8.2"></script>
+<script src="app.js?v=1.8.3"></script>
 <script>if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'}).catch(()=>{}));}</script>
 
 <div id="planEditorModal" class="modal hidden">
